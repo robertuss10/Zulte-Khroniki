@@ -1,0 +1,189 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="dashboard-header">
+            <h1><i class="fas fa-book-open"></i> Zulte Kroniki</h1>
+            <p class="lead">Panel zarządzania cytatami z 7 różnych osobowości</p>
+        </div>
+    </div>
+</div>
+
+{% if error %}
+<div class="alert alert-danger">
+    <h4>Wystąpił błąd:</h4>
+    <p>{{ error }}</p>
+</div>
+{% else %}
+
+<div class="row">
+    <div class="col-md-4 mb-4">
+        <div class="card stat-card">
+            <div class="card-body text-center">
+                <h5 class="card-title">Cytaty</h5>
+                <p class="display-4">{{ stats.total_quotes }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="card stat-card">
+            <div class="card-body text-center">
+                <h5 class="card-title">Użycia komend</h5>
+                <p class="display-4">{{ stats.total_commands }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="card stat-card">
+            <div class="card-body text-center">
+                <h5 class="card-title">Oddane głosy</h5>
+                <p class="display-4">{{ stats.total_votes }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-star"></i> Najlepsze cytaty</h5>
+            </div>
+            <div class="card-body quote-list">
+                {% if top_quotes %}
+                    {% for quote in top_quotes %}
+                        <div class="quote-item">
+                            <div class="quote-header">
+                                <span class="quote-author">{{ quote.personality.name }} #{{ quote.number }}</span>
+                                <span class="quote-score">
+                                    <i class="fas fa-thumbs-up"></i> {{ quote.upvotes }}
+                                    <i class="fas fa-thumbs-down ms-2"></i> {{ quote.downvotes }}
+                                </span>
+                            </div>
+                            <div class="quote-content">{{ quote.content }}</div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-center text-muted">Brak danych o głosowaniach</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-history"></i> Ostatnio używane cytaty</h5>
+            </div>
+            <div class="card-body quote-list">
+                {% if recent_quotes %}
+                    {% for quote in recent_quotes %}
+                        <div class="quote-item">
+                            <div class="quote-header">
+                                <span class="quote-author">{{ quote.personality.name }} #{{ quote.number }}</span>
+                                <span class="quote-date">
+                                    {{ quote.last_used.strftime('%d/%m/%Y %H:%M') }}
+                                </span>
+                            </div>
+                            <div class="quote-content">{{ quote.content }}</div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-center text-muted">Brak danych o ostatnich użyciach</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-users"></i> Osobowości</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for personality in stats.personalities %}
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <div class="personality-card">
+                                <h5>{{ personality.name }}</h5>
+                                <p>Liczba cytatów: {{ personality.quotes_count }}</p>
+                                <a href="{{ url_for('quotes', personality=personality.file_name) }}" class="btn btn-sm btn-outline-primary">
+                                    Zobacz cytaty
+                                </a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-terminal"></i> Najpopularniejsze komendy</h5>
+            </div>
+            <div class="card-body">
+                {% if commands_stats %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Komenda</th>
+                                    <th>Użycia</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for cmd in commands_stats %}
+                                    <tr>
+                                        <td>/{{ cmd.command }}</td>
+                                        <td>{{ cmd.count }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-center text-muted">Brak danych o komendach</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle"></i> Informacje o bocie</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group">
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>Nazwa bota</span>
+                        <span class="fw-bold">Zulte Kroniki</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>Liczba osobowości</span>
+                        <span class="fw-bold">7</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>Opóźnienie antyspamowe</span>
+                        <span class="fw-bold">6 sekund</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>Opóźnienie dla konkretnych cytatów</span>
+                        <span class="fw-bold">15 minut</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
