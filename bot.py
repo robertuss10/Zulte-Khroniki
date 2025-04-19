@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 
 from config import TOKEN, COMMAND_PREFIX, PERSONALITIES, COLORS, API_BASE_URL
 from quotes_manager import QuotesManager
+from models import Quote, Personality, Command, Vote
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -85,7 +86,7 @@ async def send_quote_embed(interaction, quote):
         
         # Update embed with new vote count
         session = quotes_manager.Session()
-        updated_quote = session.query(quotes_manager.Quote).get(quote.id)
+        updated_quote = session.query(Quote).get(quote.id)
         
         if updated_quote:
             embed.set_footer(text=f"👍 {updated_quote.upvotes} | 👎 {updated_quote.downvotes} | Użyto {updated_quote.use_count} razy")
@@ -112,15 +113,13 @@ async def random_quote(interaction: discord.Interaction):
     quote = quotes_manager.get_random_quote()
     await send_quote_embed(interaction, quote)
 
-# Create commands for each personality
-for file_name, name in PERSONALITIES.items():
-    @bot.tree.command(name=file_name, description=f"Losowy cytat od {name}")
-    async def personality_quote(interaction: discord.Interaction, number: int = None):
+# Create command for each personality individually
+# This is a factory function approach to avoid the closure issue with the loop
+def create_personality_command(personality_file_name, personality_name):
+    @bot.tree.command(name=personality_file_name, description=f"Losowy cytat od {personality_name}")
+    async def personality_quote_command(interaction: discord.Interaction, number: int = None):
         """Get a quote from a specific personality, optionally by number"""
         await interaction.response.defer()
-        
-        # Get personality from command name
-        personality_file_name = interaction.command.name
         
         if number is not None:
             # Check specific quote cooldown
@@ -139,7 +138,7 @@ for file_name, name in PERSONALITIES.items():
             quote = quotes_manager.get_specific_quote(personality_file_name, number)
             if quote is None:
                 await interaction.followup.send(
-                    f"Nie znaleziono cytatu #{number} dla {PERSONALITIES[personality_file_name]}.", 
+                    f"Nie znaleziono cytatu #{number} dla {personality_name}.", 
                     ephemeral=True
                 )
                 return
@@ -155,6 +154,14 @@ for file_name, name in PERSONALITIES.items():
             quote = quotes_manager.get_random_quote(personality_file_name)
         
         await send_quote_embed(interaction, quote)
+    
+    # We need to return the command function to keep a reference
+    return personality_quote_command
+
+# Create commands for each personality
+personality_commands = {}
+for file_name, name in PERSONALITIES.items():
+    personality_commands[file_name] = create_personality_command(file_name, name)
 
 @bot.tree.command(name="stats", description="Statystyki cytatów")
 async def stats(interaction: discord.Interaction):
