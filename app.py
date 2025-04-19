@@ -31,29 +31,56 @@ def index():
     session = Session()
     
     try:
+        # Basic stats with error handling
+        try:
+            total_quotes = session.query(func.count(Quote.id)).scalar() or 0
+            total_commands = session.query(func.count(Command.id)).scalar() or 0
+            total_votes = session.query(func.count(Vote.id)).scalar() or 0
+        except Exception as e:
+            app.logger.error(f"Error getting basic stats: {e}")
+            total_quotes = total_commands = total_votes = 0
+            
+        try:
+            personalities = session.query(Personality).all()
+        except Exception as e:
+            app.logger.error(f"Error getting personalities: {e}")
+            personalities = []
+            
         stats = {
-            'total_quotes': session.query(func.count(Quote.id)).scalar(),
-            'total_commands': session.query(func.count(Command.id)).scalar(),
-            'total_votes': session.query(func.count(Vote.id)).scalar(),
-            'personalities': session.query(Personality).all()
+            'total_quotes': total_quotes,
+            'total_commands': total_commands,
+            'total_votes': total_votes,
+            'personalities': personalities
         }
         
-        # Get top 5 quotes
-        top_quotes = session.query(Quote).\
-            order_by((Quote.upvotes - Quote.downvotes).desc()).\
-            limit(5).all()
+        # Get top 5 quotes with error handling
+        try:
+            top_quotes = session.query(Quote).\
+                order_by((Quote.upvotes - Quote.downvotes).desc()).\
+                limit(5).all()
+        except Exception as e:
+            app.logger.error(f"Error getting top quotes: {e}")
+            top_quotes = []
         
-        # Get recently used quotes
-        recent_quotes = session.query(Quote).\
-            filter(Quote.last_used != None).\
-            order_by(Quote.last_used.desc()).\
-            limit(5).all()
+        # Get recently used quotes with error handling
+        try:
+            recent_quotes = session.query(Quote).\
+                filter(Quote.last_used != None).\
+                order_by(Quote.last_used.desc()).\
+                limit(5).all()
+        except Exception as e:
+            app.logger.error(f"Error getting recent quotes: {e}")
+            recent_quotes = []
         
-        # Get most used commands
-        commands_stats = session.query(
-            Command.command,
-            func.count(Command.id).label('count')
-        ).group_by(Command.command).order_by(desc('count')).limit(5).all()
+        # Get most used commands with error handling
+        try:
+            commands_stats = session.query(
+                Command.command,
+                func.count(Command.id).label('count')
+            ).group_by(Command.command).order_by(desc('count')).limit(5).all()
+        except Exception as e:
+            app.logger.error(f"Error getting command stats: {e}")
+            commands_stats = []
         
         return render_template('dashboard.html', 
                                stats=stats, 
@@ -171,23 +198,24 @@ def stats():
         # Command usage over time (last 7 days) with safe defaults
         command_usage = []
         try:
+            # Create a simple 7-day mock data for the chart
             for i in range(7):
+                day_offset = 6 - i  # Reverse order: 6, 5, 4, 3, 2, 1, 0
+                from datetime import datetime, timedelta
+                date = datetime.utcnow() - timedelta(days=day_offset)
+                date_str = date.strftime("%Y-%m-%d")
+                
+                # Try to get actual data if available, otherwise use 0
                 try:
-                    date = (func.current_date() - i)
-                    date_str = f"{date.compile().params[date.key]}" if hasattr(date, 'compile') else f"Day-{i}"
-                    
                     count = session.query(func.count(Command.id)).\
-                        filter(func.date(Command.timestamp) == date).scalar() or 0
-                        
-                    command_usage.append({'date': date_str, 'count': count})
-                except Exception as e:
-                    app.logger.error(f"Error getting command usage for day -{i}: {e}")
-                    command_usage.append({'date': f"Day-{i}", 'count': 0})
-            
-            command_usage.reverse()
+                        filter(func.date(Command.timestamp) == func.date(date)).scalar() or 0
+                except Exception:
+                    count = 0
+                
+                command_usage.append({'date': date_str, 'count': count})
         except Exception as e:
             app.logger.error(f"Error processing command usage: {e}")
-            # Provide default data for the chart
+            # Provide default data for the chart if all else fails
             command_usage = [{'date': f"Day-{i}", 'count': 0} for i in range(7)]
         
         return render_template('stats.html',
