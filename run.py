@@ -1,32 +1,25 @@
-import threading
-import logging
-from bot import run_bot
-from app import run_app
+"""
+Zulte Kroniki Combined Application Runner
+This script runs both the Discord bot and web dashboard together.
+"""
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+import threading
+import time
+from app import run_app
+from bot import run_bot
 
 if __name__ == "__main__":
-    logger.info("Starting Zulte Kroniki Bot and Web Dashboard")
+    print("Starting Zulte Kroniki combined application...")
+    print("* Starting web dashboard...")
     
-    # Start bot and web app in separate threads
-    bot_thread = threading.Thread(target=run_bot)
-    app_thread = threading.Thread(target=run_app)
+    # Start web dashboard in a separate thread
+    web_thread = threading.Thread(target=run_app)
+    web_thread.daemon = True
+    web_thread.start()
     
-    bot_thread.start()
-    app_thread.start()
+    # Give the web dashboard a moment to start
+    time.sleep(2)
     
-    logger.info("Bot and Web Dashboard started successfully")
-    
-    # Wait for threads to complete
-    try:
-        bot_thread.join()
-        app_thread.join()
-    except KeyboardInterrupt:
-        logger.info("Shutting down...")
-    except Exception as e:
-        logger.error(f"Error: {e}")
+    print("* Starting Discord bot...")
+    # Run the Discord bot in the main thread
+    run_bot()
