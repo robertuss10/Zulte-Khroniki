@@ -1,0 +1,237 @@
+{% extends 'base.html' %}
+
+{% block title %}Statystyki{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1><i class="fas fa-chart-bar"></i> Statystyki cytatów</h1>
+        <p class="lead">Szczegółowe statystyki dotyczące cytatów i użycia bota</p>
+    </div>
+</div>
+
+{% if error %}
+<div class="alert alert-danger">
+    <h4>Wystąpił błąd:</h4>
+    <p>{{ error }}</p>
+</div>
+{% else %}
+
+<div class="row">
+    <div class="col-md-4 mb-4">
+        <div class="card stat-card">
+            <div class="card-body text-center">
+                <h5 class="card-title">Łączna liczba cytatów</h5>
+                <p class="display-4">{{ general_stats.total_quotes }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="card stat-card">
+            <div class="card-body text-center">
+                <h5 class="card-title">Użycia komend</h5>
+                <p class="display-4">{{ general_stats.total_commands }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="card stat-card">
+            <div class="card-body text-center">
+                <h5 class="card-title">Oddane głosy</h5>
+                <p class="display-4">{{ general_stats.total_votes }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Użycie komend w ostatnich 7 dniach</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="commandUsageChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Statystyki osobowości</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Osobowość</th>
+                                <th>Liczba cytatów</th>
+                                <th>Liczba użyć</th>
+                                <th>Najpopularniejszy cytat</th>
+                                <th>Score najpopularniejszego</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for stat in personality_stats %}
+                                <tr>
+                                    <td>{{ stat.personality.name }}</td>
+                                    <td>{{ stat.quote_count }}</td>
+                                    <td>{{ stat.used_count }}</td>
+                                    <td>
+                                        {% if stat.most_popular %}
+                                            #{{ stat.most_popular.number }}: {{ stat.most_popular.content[:50] }}{% if stat.most_popular.content|length > 50 %}...{% endif %}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if stat.most_popular %}
+                                            <span class="badge {% if stat.most_popular.score > 0 %}bg-success{% elif stat.most_popular.score < 0 %}bg-danger{% else %}bg-secondary{% endif %}">
+                                                {{ stat.most_popular.score }}
+                                            </span>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Rozkład cytatów</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="quoteDistributionChart" height="260"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Użycie cytatów</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="quoteUsageChart" height="260"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Command usage chart
+        var commandUsageCtx = document.getElementById('commandUsageChart').getContext('2d');
+        var commandUsageChart = new Chart(commandUsageCtx, {
+            type: 'line',
+            data: {
+                labels: [{% for item in command_usage %}'{{ item.date }}'{% if not loop.last %}, {% endif %}{% endfor %}],
+                datasets: [{
+                    label: 'Użycia komend',
+                    data: [{% for item in command_usage %}{{ item.count }}{% if not loop.last %}, {% endif %}{% endfor %}],
+                    backgroundColor: 'rgba(255, 215, 0, 0.2)',
+                    borderColor: 'rgba(255, 215, 0, 1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Quote distribution chart
+        var quoteDistributionCtx = document.getElementById('quoteDistributionChart').getContext('2d');
+        var quoteDistributionChart = new Chart(quoteDistributionCtx, {
+            type: 'pie',
+            data: {
+                labels: [{% for stat in personality_stats %}'{{ stat.personality.name }}'{% if not loop.last %}, {% endif %}{% endfor %}],
+                datasets: [{
+                    data: [{% for stat in personality_stats %}{{ stat.quote_count }}{% if not loop.last %}, {% endif %}{% endfor %}],
+                    backgroundColor: [
+                        'rgba(255, 215, 0, 0.7)',
+                        'rgba(255, 179, 0, 0.7)',
+                        'rgba(255, 143, 0, 0.7)',
+                        'rgba(255, 107, 0, 0.7)',
+                        'rgba(255, 71, 0, 0.7)',
+                        'rgba(255, 35, 0, 0.7)',
+                        'rgba(255, 0, 0, 0.7)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'right'
+                    }
+                }
+            }
+        });
+        
+        // Quote usage chart
+        var quoteUsageCtx = document.getElementById('quoteUsageChart').getContext('2d');
+        var quoteUsageChart = new Chart(quoteUsageCtx, {
+            type: 'bar',
+            data: {
+                labels: [{% for stat in personality_stats %}'{{ stat.personality.name }}'{% if not loop.last %}, {% endif %}{% endfor %}],
+                datasets: [{
+                    label: 'Użycia cytatów',
+                    data: [{% for stat in personality_stats %}{{ stat.used_count }}{% if not loop.last %}, {% endif %}{% endfor %}],
+                    backgroundColor: 'rgba(255, 215, 0, 0.7)',
+                    borderColor: 'rgba(255, 215, 0, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}
