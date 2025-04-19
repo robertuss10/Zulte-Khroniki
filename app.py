@@ -13,8 +13,9 @@ app.secret_key = os.environ.get("SESSION_SECRET", SECRET_KEY)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 # Configure database
-app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
-engine = create_engine(DATABASE_URL)
+db_url = os.environ.get('DATABASE_URL', DATABASE_URL)
+app.config["SQLALCHEMY_DATABASE_URI"] = db_url
+engine = create_engine(db_url, connect_args={"sslmode": "require"})
 Base.metadata.create_all(engine)
 Session = sessionmaker(bind=engine)
 
