@@ -118,43 +118,76 @@ def stats():
     session = Session()
     
     try:
-        # General stats
+        # General stats with safe defaults
+        try:
+            total_quotes = session.query(func.count(Quote.id)).scalar() or 0
+            total_commands = session.query(func.count(Command.id)).scalar() or 0
+            total_votes = session.query(func.count(Vote.id)).scalar() or 0
+        except Exception as e:
+            app.logger.error(f"Error getting general stats: {e}")
+            total_quotes = total_commands = total_votes = 0
+            
         general_stats = {
-            'total_quotes': session.query(func.count(Quote.id)).scalar(),
-            'total_commands': session.query(func.count(Command.id)).scalar(),
-            'total_votes': session.query(func.count(Vote.id)).scalar(),
+            'total_quotes': total_quotes,
+            'total_commands': total_commands,
+            'total_votes': total_votes,
         }
         
         # Personality stats
         personality_stats = []
-        for personality in session.query(Personality).all():
-            quote_count = session.query(func.count(Quote.id)).\
-                filter(Quote.personality_id == personality.id).scalar()
+        try:
+            personalities = session.query(Personality).all()
+            for personality in personalities:
+                try:
+                    quote_count = session.query(func.count(Quote.id)).\
+                        filter(Quote.personality_id == personality.id).scalar() or 0
+                    
+                    used_count = session.query(func.sum(Quote.use_count)).\
+                        filter(Quote.personality_id == personality.id).scalar() or 0
+                    
+                    most_popular = session.query(Quote).\
+                        filter(Quote.personality_id == personality.id).\
+                        order_by((Quote.upvotes - Quote.downvotes).desc()).\
+                        first()
+                    
+                    personality_stats.append({
+                        'personality': personality,
+                        'quote_count': quote_count,
+                        'used_count': used_count,
+                        'most_popular': most_popular
+                    })
+                except Exception as e:
+                    app.logger.error(f"Error processing personality {personality.name}: {e}")
+                    personality_stats.append({
+                        'personality': personality,
+                        'quote_count': 0,
+                        'used_count': 0,
+                        'most_popular': None
+                    })
+        except Exception as e:
+            app.logger.error(f"Error getting personalities: {e}")
             
-            used_count = session.query(func.sum(Quote.use_count)).\
-                filter(Quote.personality_id == personality.id).scalar() or 0
-            
-            most_popular = session.query(Quote).\
-                filter(Quote.personality_id == personality.id).\
-                order_by((Quote.upvotes - Quote.downvotes).desc()).\
-                first()
-            
-            personality_stats.append({
-                'personality': personality,
-                'quote_count': quote_count,
-                'used_count': used_count,
-                'most_popular': most_popular
-            })
-        
-        # Command usage over time (last 7 days)
+        # Command usage over time (last 7 days) with safe defaults
         command_usage = []
-        for i in range(7):
-            date = (func.current_date() - i)
-            count = session.query(func.count(Command.id)).\
-                filter(func.date(Command.timestamp) == date).scalar()
-            command_usage.append({'date': str(date.compile().params[date.key]), 'count': count})
-        
-        command_usage.reverse()
+        try:
+            for i in range(7):
+                try:
+                    date = (func.current_date() - i)
+                    date_str = f"{date.compile().params[date.key]}" if hasattr(date, 'compile') else f"Day-{i}"
+                    
+                    count = session.query(func.count(Command.id)).\
+                        filter(func.date(Command.timestamp) == date).scalar() or 0
+                        
+                    command_usage.append({'date': date_str, 'count': count})
+                except Exception as e:
+                    app.logger.error(f"Error getting command usage for day -{i}: {e}")
+                    command_usage.append({'date': f"Day-{i}", 'count': 0})
+            
+            command_usage.reverse()
+        except Exception as e:
+            app.logger.error(f"Error processing command usage: {e}")
+            # Provide default data for the chart
+            command_usage = [{'date': f"Day-{i}", 'count': 0} for i in range(7)]
         
         return render_template('stats.html',
                                general_stats=general_stats,
