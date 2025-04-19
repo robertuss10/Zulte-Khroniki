@@ -26,22 +26,34 @@ class QuotesManager:
         """Initialize database with personalities and load quotes from files"""
         session = self.Session()
         
-        # Create personalities if they don't exist
-        for file_name, name in self.personalities.items():
-            if not session.query(Personality).filter_by(file_name=file_name).first():
-                personality = Personality(name=name, file_name=file_name)
-                session.add(personality)
-                session.commit()
-                
-                # Create stats entry for this personality
-                stats = Stats(personality_id=personality.id)
-                session.add(stats)
-                session.commit()
-                
-                # Load quotes for this personality
-                self.load_quotes_from_file(personality.id, file_name)
-        
-        session.close()
+        try:
+            # Create personalities if they don't exist
+            for file_name, name in self.personalities.items():
+                try:
+                    personality = session.query(Personality).filter_by(file_name=file_name).first()
+                    if not personality:
+                        personality = Personality(name=name, file_name=file_name)
+                        session.add(personality)
+                        session.commit()
+                        
+                        # Create stats entry for this personality
+                        stats = Stats(personality_id=personality.id)
+                        session.add(stats)
+                        session.commit()
+                        
+                        # Load quotes for this personality
+                        self.load_quotes_from_file(personality.id, file_name)
+                    elif session.query(Quote).filter_by(personality_id=personality.id).count() == 0:
+                        # If personality exists but has no quotes, load them
+                        self.load_quotes_from_file(personality.id, file_name)
+                except Exception as e:
+                    logger.error(f"Error setting up {file_name}: {e}")
+                    session.rollback()
+        except Exception as e:
+            logger.error(f"Error in setup_database: {e}")
+            session.rollback()
+        finally:
+            session.close()
     
     def load_quotes_from_file(self, personality_id, file_name):
         """Load quotes from a file into the database"""
