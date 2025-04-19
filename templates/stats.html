@@ -137,101 +137,114 @@
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Command usage chart
-        var commandUsageCtx = document.getElementById('commandUsageChart').getContext('2d');
-        var commandUsageChart = new Chart(commandUsageCtx, {
-            type: 'line',
-            data: {
-                labels: [{% for item in command_usage %}'{{ item.date }}'{% if not loop.last %}, {% endif %}{% endfor %}],
-                datasets: [{
-                    label: 'Użycia komend',
-                    data: [{% for item in command_usage %}{{ item.count }}{% if not loop.last %}, {% endif %}{% endfor %}],
-                    backgroundColor: 'rgba(255, 215, 0, 0.2)',
-                    borderColor: 'rgba(255, 215, 0, 1)',
-                    borderWidth: 2,
-                    tension: 0.3,
-                    fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            precision: 0
+        try {
+            // Command usage chart
+            var commandUsageCanvas = document.getElementById('commandUsageChart');
+            if (commandUsageCanvas) {
+                var commandUsageCtx = commandUsageCanvas.getContext('2d');
+                var commandUsageChart = new Chart(commandUsageCtx, {
+                    type: 'line',
+                    data: {
+                        labels: [{% for item in command_usage %}'{{ item.date }}'{% if not loop.last %}, {% endif %}{% endfor %}],
+                        datasets: [{
+                            label: 'Użycia komend',
+                            data: [{% for item in command_usage %}{{ item.count }}{% if not loop.last %}, {% endif %}{% endfor %}],
+                            backgroundColor: 'rgba(255, 215, 0, 0.2)',
+                            borderColor: 'rgba(255, 215, 0, 1)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    precision: 0
+                                }
+                            }
                         }
                     }
-                }
+                });
             }
-        });
-        
-        // Quote distribution chart
-        var quoteDistributionCtx = document.getElementById('quoteDistributionChart').getContext('2d');
-        var quoteDistributionChart = new Chart(quoteDistributionCtx, {
-            type: 'pie',
-            data: {
-                labels: [{% for stat in personality_stats %}'{{ stat.personality.name }}'{% if not loop.last %}, {% endif %}{% endfor %}],
-                datasets: [{
-                    data: [{% for stat in personality_stats %}{{ stat.quote_count }}{% if not loop.last %}, {% endif %}{% endfor %}],
-                    backgroundColor: [
-                        'rgba(255, 215, 0, 0.7)',
-                        'rgba(255, 179, 0, 0.7)',
-                        'rgba(255, 143, 0, 0.7)',
-                        'rgba(255, 107, 0, 0.7)',
-                        'rgba(255, 71, 0, 0.7)',
-                        'rgba(255, 35, 0, 0.7)',
-                        'rgba(255, 0, 0, 0.7)'
-                    ],
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'right'
-                    }
-                }
-            }
-        });
-        
-        // Quote usage chart
-        var quoteUsageCtx = document.getElementById('quoteUsageChart').getContext('2d');
-        var quoteUsageChart = new Chart(quoteUsageCtx, {
-            type: 'bar',
-            data: {
-                labels: [{% for stat in personality_stats %}'{{ stat.personality.name }}'{% if not loop.last %}, {% endif %}{% endfor %}],
-                datasets: [{
-                    label: 'Użycia cytatów',
-                    data: [{% for stat in personality_stats %}{{ stat.used_count }}{% if not loop.last %}, {% endif %}{% endfor %}],
-                    backgroundColor: 'rgba(255, 215, 0, 0.7)',
-                    borderColor: 'rgba(255, 215, 0, 1)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            precision: 0
+            
+            // Quote distribution chart
+            var quoteDistributionCanvas = document.getElementById('quoteDistributionChart');
+            if (quoteDistributionCanvas) {
+                var quoteDistributionCtx = quoteDistributionCanvas.getContext('2d');
+                var quoteDistributionChart = new Chart(quoteDistributionCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: [{% for stat in personality_stats %}'{{ stat.personality.name }}'{% if not loop.last %}, {% endif %}{% endfor %}],
+                        datasets: [{
+                            data: [{% for stat in personality_stats %}{{ stat.quote_count }}{% if not loop.last %}, {% endif %}{% endfor %}],
+                            backgroundColor: [
+                                'rgba(255, 215, 0, 0.7)',
+                                'rgba(255, 179, 0, 0.7)',
+                                'rgba(255, 143, 0, 0.7)',
+                                'rgba(255, 107, 0, 0.7)',
+                                'rgba(255, 71, 0, 0.7)',
+                                'rgba(255, 35, 0, 0.7)',
+                                'rgba(255, 0, 0, 0.7)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'right'
+                            }
                         }
                     }
-                }
+                });
             }
-        });
+            
+            // Quote usage chart
+            var quoteUsageCanvas = document.getElementById('quoteUsageChart');
+            if (quoteUsageCanvas) {
+                var quoteUsageCtx = quoteUsageCanvas.getContext('2d');
+                var quoteUsageChart = new Chart(quoteUsageCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: [{% for stat in personality_stats %}'{{ stat.personality.name }}'{% if not loop.last %}, {% endif %}{% endfor %}],
+                        datasets: [{
+                            label: 'Użycia cytatów',
+                            data: [{% for stat in personality_stats %}{{ stat.used_count }}{% if not loop.last %}, {% endif %}{% endfor %}],
+                            backgroundColor: 'rgba(255, 215, 0, 0.7)',
+                            borderColor: 'rgba(255, 215, 0, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    precision: 0
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        } catch (e) {
+            console.error("Chart initialization error:", e);
+        }
     });
 </script>
 {% endblock %}
