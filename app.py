@@ -5,6 +5,7 @@ from sqlalchemy.orm import sessionmaker
 from werkzeug.middleware.proxy_fix import ProxyFix
 from models import Base, Personality, Quote, Command, Vote, Stats
 from config import DATABASE_URL, SECRET_KEY, HOST, PORT, PERSONALITIES
+from quotes_manager import QuotesManager
 
 # Create Flask app
 app = Flask(__name__)
@@ -16,6 +17,12 @@ app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
 engine = create_engine(DATABASE_URL)
 Base.metadata.create_all(engine)
 Session = sessionmaker(bind=engine)
+
+# Initialize quotes manager and load personalities and quotes
+quotes_manager = QuotesManager()
+with app.app_context():
+    # Make sure the database is properly set up with personalities and quotes
+    quotes_manager.setup_database()
 
 @app.route('/')
 def index():

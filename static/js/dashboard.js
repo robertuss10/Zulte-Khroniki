@@ -12,8 +12,8 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Fix for table responsiveness
-    const tables = document.querySelectorAll('.table-responsive');
-    tables.forEach(table => {
+    const responsiveTables = document.querySelectorAll('.table-responsive');
+    responsiveTables.forEach(table => {
         if (table.scrollWidth > table.clientWidth) {
             table.style.overflowX = 'auto';
         }
@@ -122,8 +122,8 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Enhance tables with sorting
-    const tables = document.querySelectorAll('.table');
-    tables.forEach(table => {
+    const sortableTables = document.querySelectorAll('.table');
+    sortableTables.forEach(table => {
         const headers = table.querySelectorAll('th');
         headers.forEach((header, index) => {
             // Skip if the column shouldn't be sortable
