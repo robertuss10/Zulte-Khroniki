@@ -13,7 +13,8 @@ logger = logging.getLogger(__name__)
 class QuotesManager:
     def __init__(self):
         """Initialize the quotes manager with database connection"""
-        self.engine = create_engine(DATABASE_URL)
+        db_url = os.environ.get('DATABASE_URL', DATABASE_URL)
+        self.engine = create_engine(db_url, connect_args={"sslmode": "require"})
         Base.metadata.create_all(self.engine)
         self.Session = sessionmaker(bind=self.engine)
         self.personalities = PERSONALITIES
