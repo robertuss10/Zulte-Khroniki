@@ -320,12 +320,12 @@ async def on_reaction_add(reaction, user):
     
     # Get quote
     session = quotes_manager.Session()
-    personality = session.query(quotes_manager.Personality).filter_by(name=personality_name).first()
+    personality = session.query(Personality).filter_by(name=personality_name).first()
     if not personality:
         session.close()
         return
     
-    quote = session.query(quotes_manager.Quote).filter_by(
+    quote = session.query(Quote).filter_by(
         personality_id=personality.id,
         number=number
     ).first()
@@ -340,7 +340,7 @@ async def on_reaction_add(reaction, user):
     
     # Update embed with new vote count
     session = quotes_manager.Session()
-    updated_quote = session.query(quotes_manager.Quote).get(quote.id)
+    updated_quote = session.query(Quote).get(quote.id)
     
     if updated_quote:
         embed.set_footer(text=f"👍 {updated_quote.upvotes} | 👎 {updated_quote.downvotes} | Użyto {updated_quote.use_count} razy")
