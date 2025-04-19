@@ -50,9 +50,10 @@ def run_bot():
             # Monitor the bot process
             while bot_process.poll() is None:
                 # Read and forward output
-                line = bot_process.stdout.readline().strip()
-                if line:
-                    logging.info(f"Bot: {line}")
+                if bot_process.stdout:
+                    line = bot_process.stdout.readline().strip()
+                    if line:
+                        logging.info(f"Bot: {line}")
                 time.sleep(0.1)
             
             exit_code = bot_process.returncode

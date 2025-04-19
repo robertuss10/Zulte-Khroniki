@@ -44,10 +44,11 @@ def start_bot():
         logging.info(f"Bot process started with PID {bot_process.pid}")
         
         # Monitor the process output
-        for line in bot_process.stdout:
-            line = line.strip()
-            if line:
-                logging.info(f"Bot: {line}")
+        if bot_process.stdout:
+            for line in bot_process.stdout:
+                line = line.strip()
+                if line:
+                    logging.info(f"Bot: {line}")
     
     except Exception as e:
         logging.error(f"Error starting bot: {e}")
@@ -71,10 +72,11 @@ def start_web():
         logging.info(f"Web dashboard started with PID {web_process.pid}")
         
         # Monitor the process output
-        for line in web_process.stdout:
-            line = line.strip()
-            if line:
-                logging.info(f"Web: {line}")
+        if web_process.stdout:
+            for line in web_process.stdout:
+                line = line.strip()
+                if line:
+                    logging.info(f"Web: {line}")
     
     except Exception as e:
         logging.error(f"Error starting web: {e}")
